@@ -1,5 +1,9 @@
 Revision history for Perl extension Tie::LLHash.
 
+0.04  Wed Dec  1 22:51:01 EST 1999
+   - Added 'lazy-mode', which allows you to append new entries to the end
+     of the hash by assigning to the hash by doing $hash{key} = 'value';
+
 0.03 
    - fixed a fatal bug in the current_value() method
    - insert(key,value) now equivalent to first(key,value),

@@ -4,16 +4,16 @@ use vars qw($VERSION);
 use Carp;
 
 
-$VERSION = '0.03';
+$VERSION = '0.04';
 
 
 sub TIEHASH {
    my $pkg = shift;
 
-   my $self = {};
-   bless($self, $pkg);
+   my $self = bless {}, $pkg;
+   %$self = ( %$self, %{shift()} ) if ref $_[0];
    $self->CLEAR;
-   
+
    # Initialize the hash if more arguments are given
    while (@_) {
       $self->last( splice(@_, 0, 2) );
@@ -37,7 +37,10 @@ sub STORE {
    my $name = shift;
    my $value = shift;
 
-   croak ("No such key '$name', use first or insert to add keys") unless $self->EXISTS($name);
+   unless (exists $self->{'nodes'}{$name}) {
+     croak ("No such key '$name', use first or insert to add keys") unless $self->{lazy};
+     return $self->last($name, $value);
+   }
    return $self->{'nodes'}{$name}{'value'} = $value;
 }
 
@@ -59,39 +62,39 @@ sub EXISTS {
 }
 
 sub DELETE {
-   my $self = shift;
-   my $key = shift;
-   my $debug = 0;
+  my $self = shift;
+  my $key = shift;
+  #my $debug = 0;
+  
+  
+  #print ("Deleting $key ...") if $debug;
+  return unless $self->EXISTS($key);
+  
+  if ($self->{'first'} eq $self->{'last'}) {
+    #print ("only key\n") if $debug;
+    $self->{'first'} = undef;
+    $self->{'current'} = undef;
+    $self->{'last'} = undef;
+    
+  } elsif ($self->{'first'} eq $key) {
+    #print ("first key\n") if $debug;
+    $self->{'first'} = $self->{'nodes'}{$key}{'next'};
+    $self->{'nodes'}{ $self->{'first'} }{'prev'} = undef;
+    
+  } elsif ($self->{'last'} eq $key) {
+    #print ("last key\n") if $debug;
+    $self->{'last'} = $self->{'nodes'}{$key}{'prev'};
+    $self->{'nodes'}{ $self->{'last'} }{'next'} = undef;
+    
+  } else {
+    #print ("middle key\n") if $debug;
+    my $key_one   = $self->{'nodes'}{$key}{'prev'};
+    my $key_three = $self->{'nodes'}{$key}{'next'};
+    $self->{'nodes'}{$key_one  }{'next'} = $key_three;
+    $self->{'nodes'}{$key_three}{'prev'} = $key_one;
+  }
    
-
-print ("Deleting $key ...") if $debug;
-   return unless $self->EXISTS($key);
-   
-   if ($self->{'first'} eq $self->{'last'}) {
-print ("only key\n") if $debug;
-      $self->{'first'} = undef;
-      $self->{'current'} = undef;
-      $self->{'last'} = undef;
-
-   } elsif ($self->{'first'} eq $key) {
-print ("first key\n") if $debug;
-      $self->{'first'} = $self->{'nodes'}{$key}{'next'};
-      $self->{'nodes'}{ $self->{'first'} }{'prev'} = undef;
-
-   } elsif ($self->{'last'} eq $key) {
-print ("last key\n") if $debug;
-      $self->{'last'} = $self->{'nodes'}{$key}{'prev'};
-      $self->{'nodes'}{ $self->{'last'} }{'next'} = undef;
-
-   } else {
-print ("middle key\n") if $debug;
-      my $key_one = $self->{'nodes'}{$key}{'prev'};
-      my $key_three = $self->{'nodes'}{$key}{'next'};
-      $self->{'nodes'}{$key_one}{'next'} = $key_three;
-      $self->{'nodes'}{$key_three}{'prev'} = $key_one;
-   }
-   
-   return (delete $self->{'nodes'}{$key}, $self->reset)[0];
+  return (delete $self->{'nodes'}{$key}, $self->reset)[0];
 }
 
 sub CLEAR {
@@ -242,18 +245,21 @@ structure of a Perl hash, but the orderedness of a list.
 Don't use it if you want to be able to address your hash entries by number, 
 like you can in a real list ($list[5]).
 
-See also Tie::IxHash by Gurusamy Sarathy.  It's similar (it does
-ordered hashes), but it has a different internal data structure and a different 
-flavor of usage.  It makes your hash behave more like a list than this does.
+See also Tie::IxHash by Gurusamy Sarathy.  It's similar (it also does
+ordered hashes), but it has a different internal data structure and a
+different flavor of usage.  It makes your hash behave more like a list than
+this does.  This module keeps more of the hash flavor.
 
 =head1 SYNOPSIS
 
  use Tie::LLHash;
  
- # A new empty ordered hash
+ # A new empty ordered hash:
  tie (%hash, "Tie::LLHash");
- # A new ordered hash with stuff in it
+ # A new ordered hash with stuff in it:
  tie (%hash2, "Tie::LLHash", key1=>$val1, key2=>$val2);
+ # Allow easy insertions at the end of the hash:
+ tie (%hash2, "Tie::LLHash", {lazy=>1}, key1=>$val1, key2=>$val2);
  
  # Add some entries:
  (tied %hash)->first('the' => 'hash');
@@ -262,7 +268,7 @@ flavor of usage.  It makes your hash behave more like a list than this does.
  (tied %hash)->insert('are' => 'right', 'the');
  (tied %hash)->insert('things' => 'in', 'All');
  (tied %hash)->last('by' => 'gum');
- 
+
  $value = $hash{'things'}; # Look up a value
  $hash{'here'} = 'NOW';    # Set the value of an EXISTING RECORD!
  
@@ -270,13 +276,16 @@ flavor of usage.  It makes your hash behave more like a list than this does.
  $key = (tied %hash)->key_before('in');  # Returns the previous key
  $key = (tied %hash)->key_after('in');   # Returns the next key
  
-
  # Luxury routines:
  $key = (tied %hash)->current_key;
  $val = (tied %hash)->current_value;
  (tied %hash)->next;
  (tied %hash)->prev;
  (tied %hash)->reset;
+
+ # If lazy-mode is set, new keys will be added at the end.
+ $hash{newkey} = 'newval';
+ $hash{newkey2} = 'newval2';
 
 =head1 METHODS
 
@@ -366,31 +375,22 @@ simply because iteration is probably important to people who need ordered data.
     $obj->next;
  }
 
-=head1
-
 =head1 WARNINGS
 
 =over 4
 
-=item * Don't add new elements to the hash by simple assignment, a 
-la <$hash{$new_key} = $value>, because LLHash won't know where in
-the order to put the new element.
+=item * Unless you're using lazy-mode, don't add new elements to the hash by
+simple assignment, a la <$hash{$new_key} = $value>, because LLHash won't
+know where in the order to put the new element.
 
 
 =head1 TO DO
 
- I need to write documentation for all the functions here.
- 
- I might make $hash{$new_key} = $new_value a synonym for 
- (tied %hash)->last($new_key, $new_value) when $new_key doesn't exist 
- already.  This behavior would be optional.  In some cases it could be
- dangerous, for example if you thought an element was already in the 
- hash but it wasn't, or vice versa.
- 
- I could speed up the keys() routine in a scalar context if I kept
- track of how many entries were in the hash.
- 
- I may also want to add a method for... um, I forgot.
+I could speed up the keys() routine in a scalar context if I knew how to
+sense when NEXTKEY is being called on behalf of keys().  Not sure whether
+this is possible.
+
+I may also want to add a method for... um, I forgot.  Something.
 
 =head1 AUTHOR
 
