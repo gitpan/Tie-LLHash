@@ -4,8 +4,7 @@ use vars qw($VERSION);
 use Carp;
 
 
-$VERSION = '0.04';
-
+$VERSION = sprintf '%d.%03d', q$Revision: 1.2 $ =~ /: (\d+).(\d+)/;
 
 sub TIEHASH {
    my $pkg = shift;
@@ -247,8 +246,11 @@ like you can in a real list ($list[5]).
 
 See also Tie::IxHash by Gurusamy Sarathy.  It's similar (it also does
 ordered hashes), but it has a different internal data structure and a
-different flavor of usage.  It makes your hash behave more like a list than
-this does.  This module keeps more of the hash flavor.
+different flavor of usage.  IxHash stores its data internally as both
+a hash and an array in parallel.  LLHash stores its data as a
+bidirectional linked list, making both inserts and deletes very fast.
+IxHash therefore makes your hash behave more like a list than LLHash
+does.  This module keeps more of the hash flavor.
 
 =head1 SYNOPSIS
 
