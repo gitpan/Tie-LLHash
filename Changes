@@ -1,6 +1,16 @@
 Revision history for Perl extension Tie::LLHash.
 
+0.02  Wed May 20 19:21:52 1998
+   - forgot to include a README file in the original distribution, so I
+     added one now
+   - running all tests now won't give any warnings under -w flag
+   - added tests 7-10
+   - fixed some problems with the DELETE method - it went wrong when
+     deleting the last element in a hash
+   - insert() didn't work right when inserting after the last element
+   - can give initialization hash for tie() constructor
+
 0.01  Mon May 11 17:45:43 1998
-	- original version; created by h2xs 1.18
+   - original version; created by h2xs 1.18
    - wrote tests 2-6
    - thanks to Byron Brummer who pointed out a pre-release bug in the EXISTS method

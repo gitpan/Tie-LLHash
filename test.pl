@@ -3,10 +3,12 @@
 
 ######################### We start with some black magic to print on failure.
 
+$^W = 1;
+
 # Change 1..1 below to 1..last_test_to_print .
 # (It may become useful if the test is moved to ./t subdirectory.)
 
-BEGIN { $| = 1; print "1..6\n"; }
+BEGIN { $| = 1; print "1..10\n"; }
 END {print "not ok 1\n" unless $loaded;}
 use Tie::LLHash;
 $loaded = 1;
@@ -18,9 +20,15 @@ print "ok 1\n";
 # (correspondingly "not ok 13") depending on the success of chunk 13
 # of the test code):
 
+sub report_result {
+	$TEST_NUM ||= 2; 
+	print ( $_[0] ? "ok $TEST_NUM\n" : "not ok $TEST_NUM\n" );
+	$TEST_NUM++;
+}
+
 
 {
-	my %hash;
+	my (%hash, %hash2);
 
 	# 2: Test the tie interface
 	tie (%hash, "Tie::LLHash");
@@ -50,10 +58,57 @@ print "ok 1\n";
 	&report_result( not keys %hash
 						and not exists $hash{orange}
 						and not exists $hash{red} );
-}
 
-sub report_result {
-	$TEST_NUM ||= 2;
-	print ( $_[0] ? "ok $TEST_NUM\n" : "not ok $TEST_NUM\n" );
-	$TEST_NUM++;
+	# 7: Exercise the ->last method
+	{
+		my ($i, $bad);
+		for ($i=0; $i<10; $i++) {
+			(tied %hash)->last($i, $i**2);
+		}
+
+		$i=0;
+		foreach (keys %hash) {
+			$bad++ if ($i++ ne $_);
+		}
+		&report_result(!$bad);
+	}
+
+	# 8: delete all contents
+	%hash = ();
+	&report_result( !%hash );
+
+	# 9: Combine some ->first and ->last action
+	{
+		my @result = qw(1 6 4 5 7 9 n r);
+		(tied %hash)->first(5=>1);
+		(tied %hash)->last (7=>1);
+		(tied %hash)->last (9=>1);
+		(tied %hash)->first(4=>1);
+		(tied %hash)->last (n=>1);
+		(tied %hash)->first(6=>1);
+		(tied %hash)->first(1=>1);
+		(tied %hash)->last (r=>1);
+		
+		my ($i, $bad);
+		foreach (keys %hash) {
+			$bad++ if ($_ ne $result[$i++]);
+		}
+		&report_result(!$bad);
+	}
+
+	# 10: create a new hash with an initialization hash
+	{
+		my @keys = qw(zero one two three four five six seven eight);
+
+		tie(%hash2, 'Tie::LLHash', map {$keys[$_], $_} 0..8);
+		my ($bad, $i) = (0,0);
+		
+		foreach (keys %hash2) {
+#			print ("$_: $hash
+			$bad++ unless ($_ eq $keys[$i]  and  $hash2{$_} eq $i++); 
+		}
+
+		&report_result( !$bad );
+	}
+
 }
