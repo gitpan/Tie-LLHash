@@ -8,22 +8,17 @@ $^W = 1;
 # Change 1..1 below to 1..last_test_to_print .
 # (It may become useful if the test is moved to ./t subdirectory.)
 
-BEGIN { $| = 1; print "1..10\n"; }
+BEGIN { $| = 1; print "1..11\n"; }
 END {print "not ok 1\n" unless $loaded;}
 use Tie::LLHash;
 $loaded = 1;
-print "ok 1\n";
+&report_result(1);
 
 ######################### End of black magic.
 
-# Insert your test code below (better if it prints "ok 13"
-# (correspondingly "not ok 13") depending on the success of chunk 13
-# of the test code):
-
 sub report_result {
-	$TEST_NUM ||= 2; 
-	print ( $_[0] ? "ok $TEST_NUM\n" : "not ok $TEST_NUM\n" );
 	$TEST_NUM++;
+	print ( $_[0] ? "ok $TEST_NUM\n" : "not ok $TEST_NUM\n" );
 }
 
 
@@ -111,4 +106,11 @@ sub report_result {
 		&report_result( !$bad );
 	}
 
+	# 11: use insert() to add an item at the beginning
+	untie %hash2;
+	{
+		my $t = tie(%hash2, 'Tie::LLHash', one=>1);
+		$t->insert(zero=>0);
+		&report_result($t->first eq 'zero' and $t->last eq 'one')
+	}
 }

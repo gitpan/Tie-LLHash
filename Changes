@@ -1,5 +1,12 @@
 Revision history for Perl extension Tie::LLHash.
 
+0.03 
+   - fixed a fatal bug in the current_value() method
+   - insert(key,value) now equivalent to first(key,value),
+     making it somewhat easier to insert values at the beginning
+     of the hash.
+   - wrote documentation for the non-TIEHASH methods
+
 0.02  Wed May 20 19:21:52 1998
    - forgot to include a README file in the original distribution, so I
      added one now

@@ -4,7 +4,7 @@ use vars qw($VERSION);
 use Carp;
 
 
-$VERSION = '0.02';
+$VERSION = '0.03';
 
 
 sub TIEHASH {
@@ -110,11 +110,10 @@ sub insert {
    my $self = shift;
    my $two_key = shift;
    my $two_value = shift;
-
-   unless (@_) {
-      croak ("Must supply 3 arguments to ->insert() method");
-   }
    my $one_key = shift;
+   
+   # insert(key,val) and insert(key,val,undef)  ==  first(key,val)
+   return $self->first($two_key, $two_value) unless defined $one_key;
 
    croak ("No such key '$one_key'") unless $self->EXISTS($one_key);
    croak ("'$two_key' already exists") if $self->EXISTS($two_key);
@@ -204,27 +203,20 @@ sub last {
 }
 
 sub key_before {
-   my $self = shift;
-   my $name = shift;
-
-   return $self->{'nodes'}{$name}{'prev'};
+   return $_[0]->{'nodes'}{$_[1]}{'prev'};
 }
 
 sub key_after {
-   my $self = shift;
-   my $name = shift;
-
-   return $self->{'nodes'}{$name}{'next'};
+   return $_[0]->{'nodes'}{$_[1]}{'next'};
 }
 
 sub current_key {
-   my $self = shift;
-   return $self->{'current'};
+   return $_[0]->{'current'};
 }
 
 sub current_value {
    my $self = shift;
-   return $self->get($self->{'current'});
+   return $self->FETCH($self->{'current'});
 }
 
 sub next  { my $s=shift; $s->NEXTKEY($_) }
@@ -258,8 +250,10 @@ flavor of usage.  It makes your hash behave more like a list than this does.
 
  use Tie::LLHash;
  
- tie (%hash, "Tie::LLHash"); # A new empty hash
- tie (%hash2, "Tie::LLHash", "key1"=>$val1, "key2"=>$val2); # A new hash with stuff in it
+ # A new empty ordered hash
+ tie (%hash, "Tie::LLHash");
+ # A new ordered hash with stuff in it
+ tie (%hash2, "Tie::LLHash", key1=>$val1, key2=>$val2);
  
  # Add some entries:
  (tied %hash)->first('the' => 'hash');
@@ -283,7 +277,66 @@ flavor of usage.  It makes your hash behave more like a list than this does.
  (tied %hash)->next;
  (tied %hash)->prev;
  (tied %hash)->reset;
- 
+
+=head1 METHODS
+
+=over 4
+
+=item * insert(key, value, previous_key)
+
+This inserts a new key-value pair into the hash right after the C<previous_key> key.
+If C<previous_key> is undefined (or not supplied), this is exactly equivalent to
+C<first(key, value)>.  If C<previous_key> is defined, then it must be a string which
+is already a key in the hash - otherwise we'll croak().
+
+=item * first(key, value)  (or)  first()
+
+Gets or sets the first key in the hash.  Without arguments, simply returns a string
+which is the first key in the database.  With arguments, it inserts a new key-value
+pair at the beginning of the hash.
+
+=item * last(key, value)  (or)  last()
+
+Gets or sets the last key in the hash.  Without arguments, simply returns a string
+which is the last key in the database.  With arguments, it inserts a new key-value
+pair at the end of the hash.
+
+=item * key_before(key)
+
+Returns the name of the key immediately before the given key.  If no keys are
+before the given key, returns C<undef>.
+
+=item * key_after(key)
+
+Returns the name of the key immediately after the given key.  If no keys are
+after the given key, returns C<undef>.
+
+=item * current_key()
+
+When iterating through the hash, this returns the key at the current position
+in the hash.
+
+=item * current_value()
+
+When iterating through the hash, this returns the value at the current position
+in the hash.
+
+=item * next()
+
+Increments the current position in the hash forward one item.  Returns the
+new current key, or C<undef> if there are no more entries.
+
+=item * prev()
+
+Increments the current position in the hash backward one item.  Returns the
+new current key, or C<undef> if there are no more entries.
+
+=item * reset()
+
+Resets the current position to be the start of the order.  Returns the new
+current key, or C<undef> if there are no keys.
+
+=back 
  
 =head1 ITERATION TECHNIQUES
 
@@ -312,6 +365,8 @@ simply because iteration is probably important to people who need ordered data.
     print ("$key: $hash{$key}\n");
     $obj->next;
  }
+
+=head1
 
 =head1 WARNINGS
 
