@@ -1,6 +1,7 @@
 Changes
 LLHash.pm
-MANIFEST
 Makefile.PL
+MANIFEST
+META.yml			Module meta-data (added by MakeMaker)
 README
-test.pl
+t/basic.t
