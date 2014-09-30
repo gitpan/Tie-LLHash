@@ -1,6 +1,20 @@
 Change log for Tie-LLHash:
 
-1.003
+Development
+
+ - Grzegorz Rożniecki (XAERXESS) has taken over maintenance
+
+ - updated revision history in Changes (as per CPAN::Changes::Spec)
+
+ - cleaned up documentation
+
+ - moved LLHash.pm to lib/Tie/LLHash.pm
+
+ - tweaked Makefile.PL
+
+ - migrated tests to Test::More
+
+1.003  2004-03-13 16:53:28
 
  - delete($hash{$key}) now returns the associated value, previously it
    returned an internal data structure not meant for external use.
@@ -12,19 +26,19 @@ Change log for Tie-LLHash:
 
  - Un-synchronized version numbers with CVS
 
-1.002  2000/04/01 16:04:27
+1.002  2000-04-01 16:04:27
 
  - Added more documentation about the differences between this module and
    Tie::IxHash.
-   
+
  - Synchronized version numbers with CVS.
 
-0.04  Wed Dec  1 22:51:01 EST 1999
+0.04  1999-12-01 22:51:01
 
  - Added 'lazy-mode', which allows you to append new entries to the end
    of the hash by assigning to the hash by doing $hash{key} = 'value';
-   
-0.03
+
+0.03  1998-09-29 20:14:53
 
  - fixed a fatal bug in the current_value() method
 
@@ -34,7 +48,7 @@ Change log for Tie-LLHash:
 
  - wrote documentation for the non-TIEHASH methods
 
-0.02  Wed May 20 19:21:52 1998
+0.02  1998-05-20 19:21:52
 
  - forgot to include a README file in the original distribution, so I
    added one now
@@ -50,12 +64,10 @@ Change log for Tie-LLHash:
 
  - can give initialization hash for tie() constructor
 
-0.01  Mon May 11 17:45:43 1998
+0.01  1998-05-11 17:45:43
 
  - original version; created by h2xs 1.18
 
  - wrote tests 2-6
 
  - thanks to Byron Brummer who pointed out a pre-release bug in the EXISTS method
-
-

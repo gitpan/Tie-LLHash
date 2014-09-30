@@ -3,8 +3,6 @@ Hi,
 This is the Tie::LLHash.pm module.  It is a class for implementing
 ordered Perl hashes.  It is designed to be flexible and sub-classible.
 
-It also may change significantly - this is only version 0.01, after all =).
-
 For more specific information, please see the documentation inside
 LLHash.pm, by doing "pod2txt LLHash.pm", or "perldoc Tie::LLHash" once
 you've installed the module.
@@ -17,6 +15,5 @@ To install the module, do the usual:
    make install
 
 
-
 -Ken Williams
- ken@forum.swarthmore.edu
+ kenahoo@gmail.com

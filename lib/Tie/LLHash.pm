@@ -1,10 +1,10 @@
 package Tie::LLHash;
+
 use strict;
-use vars qw($VERSION);
+use warnings;
 use Carp;
 
-
-$VERSION = '1.003';
+our $VERSION = '1.003_01';
 
 sub TIEHASH {
    my $pkg = shift;
@@ -17,7 +17,7 @@ sub TIEHASH {
    while (@_) {
       $self->last( splice(@_, 0, 2) );
    }
-   
+
    return $self;
 }
 
@@ -66,8 +66,7 @@ sub EXISTS {
 sub DELETE {
   my $self = shift;
   my $key = shift;
-  #my $debug = 0;
-  
+
   return unless $self->EXISTS($key);
   my $node = $self->{'nodes'}{$key};
 
@@ -75,16 +74,16 @@ sub DELETE {
     $self->{'first'} = undef;
     $self->{'current'} = undef;
     $self->{'last'} = undef;
-    
+
   } elsif ($self->{'first'} eq $key) {
     $self->{'first'} = $node->{'next'};
     $self->{'nodes'}{ $self->{'first'} }{'prev'} = undef;
     $self->{'current'} = undef;
-    
+
   } elsif ($self->{'last'} eq $key) {
     $self->{'current'} = $self->{'last'} = $node->{'prev'};
     $self->{'nodes'}{ $self->{'last'} }{'next'} = undef;
-    
+
   } else {
     my $key_one   = $node->{'prev'};
     my $key_three = $node->{'next'};
@@ -92,20 +91,20 @@ sub DELETE {
     $self->{'nodes'}{$key_three}{'prev'} = $key_one;
     $self->{'current'} = $key_one;
   }
-   
+
   return +(delete $self->{'nodes'}{$key})->{value};
 }
 
 sub CLEAR {
    my $self = shift;
-   
+
    $self->{'first'} = undef;
    $self->{'last'} = undef;
    $self->{'current'} = undef;
    $self->{'nodes'} = {};
 }
 
-# Special access methods 
+# Special access methods
 # Use (tied %hash)->method to get at them
 
 sub insert {
@@ -113,7 +112,7 @@ sub insert {
    my $two_key = shift;
    my $two_value = shift;
    my $one_key = shift;
-   
+
    # insert(key,val) and insert(key,val,undef)  ==  first(key,val)
    return $self->first($two_key, $two_value) unless defined $one_key;
 
@@ -127,7 +126,7 @@ sub insert {
    $self->{'nodes'}{$two_key}{'prev'} = $one_key;
    $self->{'nodes'}{$two_key}{'next'} = $three_key;
    $self->{'nodes'}{$two_key}{'value'} = $two_value;
-   
+
    if (defined $three_key) {
       $self->{'nodes'}{$three_key}{'prev'} = $two_key;
    }
@@ -142,13 +141,13 @@ sub insert {
 
 sub first {
    my $self = shift;
-   
+
    if (@_) { # Set it
       my $newkey = shift;
       my $newvalue = shift;
 
       croak ("'$newkey' already exists") if $self->EXISTS($newkey);
-      
+
       # Create the new node
       $self->{'nodes'}{$newkey} =
       {
@@ -156,13 +155,13 @@ sub first {
          'value' => $newvalue,
          'prev'  => undef,
       };
-      
+
       # Put it in its relative place
       if (defined $self->{'first'}) {
          $self->{'nodes'}{$newkey}{'next'} = $self->{'first'};
          $self->{'nodes'}{ $self->{'first'} }{'prev'} = $newkey;
       }
-      
+
       # Finally, make this node the first node
       $self->{'first'} = $newkey;
 
@@ -174,13 +173,13 @@ sub first {
 
 sub last {
    my $self = shift;
-   
+
    if (@_) { # Set it
       my $newkey = shift;
       my $newvalue = shift;
 
       croak ("'$newkey' already exists") if $self->EXISTS($newkey);
-   
+
       # Create the new node
       $self->{'nodes'}{$newkey} =
       {
@@ -221,19 +220,27 @@ sub current_value {
    return $self->FETCH($self->{'current'});
 }
 
-sub next  { my $s=shift; $s->NEXTKEY($_) }
-sub prev  {
+sub next {
+   my $self = shift;
+   return $self->NEXTKEY;
+}
+
+sub prev {
    my $self = shift;
    return $self->{'current'} = $self->{'nodes'}{ $self->{'current'} }{'prev'};
 }
-sub reset { my $s=shift; $s->FIRSTKEY($_) }
+
+sub reset {
+   my $self = shift;
+   return $self->FIRSTKEY;
+}
 
 1;
 __END__
 
 =head1 NAME
 
-Tie::LLHash.pm - ordered hashes
+Tie::LLHash - Ordered hashes
 
 =head1 DESCRIPTION
 
@@ -241,10 +248,10 @@ This class implements an ordered hash-like object.  It's a cross between a
 Perl hash and a linked list.  Use it whenever you want the speed and
 structure of a Perl hash, but the orderedness of a list.
 
-Don't use it if you want to be able to address your hash entries by number, 
-like you can in a real list ($list[5]).
+Don't use it if you want to be able to address your hash entries by number,
+like you can in a real list (e.g. C<$list[5]>).
 
-See also Tie::IxHash by Gurusamy Sarathy.  It's similar (it also does
+See also L<Tie::IxHash> by Gurusamy Sarathy.  It's similar (it also does
 ordered hashes), but it has a different internal data structure and a
 different flavor of usage.  IxHash stores its data internally as both
 a hash and an array in parallel.  LLHash stores its data as a
@@ -255,17 +262,17 @@ does.  This module keeps more of the hash flavor.
 =head1 SYNOPSIS
 
  use Tie::LLHash;
- 
+
  # A new empty ordered hash:
  tie (%hash, "Tie::LLHash");
  # A new ordered hash with stuff in it:
  tie (%hash2, "Tie::LLHash", key1=>$val1, key2=>$val2);
  # Allow easy insertions at the end of the hash:
  tie (%hash2, "Tie::LLHash", {lazy=>1}, key1=>$val1, key2=>$val2);
- 
+
  # Add some entries:
  (tied %hash)->first('the' => 'hash');
- (tied %hash)->insert('here' => 'now', 'the'); 
+ (tied %hash)->insert('here' => 'now', 'the');
  (tied %hash)->first('All' => 'the');
  (tied %hash)->insert('are' => 'right', 'the');
  (tied %hash)->insert('things' => 'in', 'All');
@@ -273,11 +280,11 @@ does.  This module keeps more of the hash flavor.
 
  $value = $hash{'things'}; # Look up a value
  $hash{'here'} = 'NOW';    # Set the value of an EXISTING RECORD!
- 
- 
+
+
  $key = (tied %hash)->key_before('in');  # Returns the previous key
  $key = (tied %hash)->key_after('in');   # Returns the next key
- 
+
  # Luxury routines:
  $key = (tied %hash)->current_key;
  $val = (tied %hash)->current_value;
@@ -347,8 +354,8 @@ new current key, or C<undef> if there are no more entries.
 Resets the current position to be the start of the order.  Returns the new
 current key, or C<undef> if there are no keys.
 
-=back 
- 
+=back
+
 =head1 ITERATION TECHNIQUES
 
 Here is a smattering of ways you can iterate over the hash.  I include it here
@@ -357,11 +364,11 @@ simply because iteration is probably important to people who need ordered data.
  while (($key, $val) = each %hash) {
     print ("$key: $val\n");
  }
- 
+
  foreach $key (keys %hash) {
     print ("$key: $hash{$key}\n");
  }
- 
+
  my $obj = tied %hash;  # For the following examples
 
  $key = $obj->reset;
@@ -382,21 +389,29 @@ simply because iteration is probably important to people who need ordered data.
 =over 4
 
 =item * Unless you're using lazy-mode, don't add new elements to the hash by
-simple assignment, a la <$hash{$new_key} = $value>, because LLHash won't
+simple assignment, a la C<$hash{$new_key} = $value>, because LLHash won't
 know where in the order to put the new element.
 
+=back
 
-=head1 TO DO
+=head1 TODO
 
-I could speed up the keys() routine in a scalar context if I knew how to
-sense when NEXTKEY is being called on behalf of keys().  Not sure whether
+=over 4
+
+=item * Add support for NEXTKEY and next with
+L<additional argument|http://perldoc.perl.org/perltie.html#NEXTKEY-this%2c-lastkey>.
+
+=item * I could speed up the keys() routine in a scalar context if I knew how
+to sense when NEXTKEY is being called on behalf of keys().  Not sure whether
 this is possible.
 
-I may also want to add a method for... um, I forgot.  Something.
+=item * I may also want to add a method for... um, I forgot.  Something.
 
-=head1 AUTHOR
+=back
 
-Ken Williams <ken@forum.swarthmore.edu>
+=head1 COPYRIGHT AND LICENSE
+
+Ken Williams <kenahoo@gmail.com>
 
 Copyright (c) 1998 Swarthmore College. All rights reserved.
 This program is free software; you can redistribute it and/or
