@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '1.003_01';
+our $VERSION = '1.004';
 
 sub TIEHASH {
    my $pkg = shift;
@@ -102,6 +102,11 @@ sub CLEAR {
    $self->{'last'} = undef;
    $self->{'current'} = undef;
    $self->{'nodes'} = {};
+}
+
+sub SCALAR {
+    my $self = shift;
+    return scalar %{$self->{'nodes'}};
 }
 
 # Special access methods
@@ -248,16 +253,13 @@ This class implements an ordered hash-like object.  It's a cross between a
 Perl hash and a linked list.  Use it whenever you want the speed and
 structure of a Perl hash, but the orderedness of a list.
 
-Don't use it if you want to be able to address your hash entries by number,
-like you can in a real list (e.g. C<$list[5]>).
-
 See also L<Tie::IxHash> by Gurusamy Sarathy.  It's similar (it also does
-ordered hashes), but it has a different internal data structure and a
-different flavor of usage.  IxHash stores its data internally as both
-a hash and an array in parallel.  LLHash stores its data as a
+tied ordered hashes), but it has a different internal data structure and a
+different flavor of usage.  L<Tie::IxHash> stores its data internally as
+both a hash and an array in parallel.  C<Tie::LLHash> stores its data as a
 bidirectional linked list, making both inserts and deletes very fast.
-IxHash therefore makes your hash behave more like a list than LLHash
-does.  This module keeps more of the hash flavor.
+L<Tie::IxHash> therefore makes your hash behave more like a list than
+C<Tie::LLHash> does.  This module keeps more of the hash flavor.
 
 =head1 SYNOPSIS
 
@@ -279,8 +281,8 @@ does.  This module keeps more of the hash flavor.
  (tied %hash)->last('by' => 'gum');
 
  $value = $hash{'things'}; # Look up a value
- $hash{'here'} = 'NOW';    # Set the value of an EXISTING RECORD!
-
+ $hash{'here'} = 'NOW';    # Set the value of an existing record
+                           # or insert as last node in lazy mode
 
  $key = (tied %hash)->key_before('in');  # Returns the previous key
  $key = (tied %hash)->key_after('in');   # Returns the next key
@@ -292,7 +294,7 @@ does.  This module keeps more of the hash flavor.
  (tied %hash)->prev;
  (tied %hash)->reset;
 
- # If lazy-mode is set, new keys will be added at the end.
+ # If lazy mode is set, new keys will be added at the end.
  $hash{newkey} = 'newval';
  $hash{newkey2} = 'newval2';
 
@@ -388,9 +390,13 @@ simply because iteration is probably important to people who need ordered data.
 
 =over 4
 
-=item * Unless you're using lazy-mode, don't add new elements to the hash by
-simple assignment, a la C<$hash{$new_key} = $value>, because LLHash won't
-know where in the order to put the new element.
+=item * Unless you're using lazy mode, don't add new elements to the hash by
+simple assignment, a la C<$hash{$new_key} = $value>, because C<Tie::LLHash>
+won't know where in the order to put the new element and will die.
+
+=item * Evaluating tied hash in scalar context wasn't implemented until Perl
+5.8.3, so on earlier Perl versions it will always return 0, even if hash is not
+empty.
 
 =back
 
@@ -405,7 +411,15 @@ L<additional argument|http://perldoc.perl.org/perltie.html#NEXTKEY-this%2c-lastk
 to sense when NEXTKEY is being called on behalf of keys().  Not sure whether
 this is possible.
 
-=item * I may also want to add a method for... um, I forgot.  Something.
+=back
+
+=head1 SEE ALSO
+
+=over 4
+
+=item * L<Tie::IxHash>
+
+=item * L<Hash::Ordered>
 
 =back
 

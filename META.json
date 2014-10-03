@@ -4,7 +4,7 @@
       "Ken Williams <kwilliams@cpan.org>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "ExtUtils::MakeMaker version 6.92, CPAN::Meta::Converter version 2.140640",
+   "generated_by" : "ExtUtils::MakeMaker version 6.98, CPAN::Meta::Converter version 2.142060",
    "license" : [
       "perl_5"
    ],
@@ -44,7 +44,7 @@
          }
       }
    },
-   "release_status" : "testing",
+   "release_status" : "stable",
    "resources" : {
       "bugtracker" : {
          "web" : "https://rt.cpan.org/Dist/Display.html?Name=Tie-LLHash"
@@ -55,5 +55,5 @@
          "web" : "https://github.com/Xaerxess/Tie-LLHash"
       }
    },
-   "version" : "1.003_01"
+   "version" : "1.004"
 }

@@ -55,7 +55,10 @@ use Tie::LLHash;
   }
 
   # Scalar context and delete all contents
-  ok scalar %hash;
+  SKIP: {
+     skip q{$tied_hash->SCALAR wasn't implemented on Perls < 5.8.3}, 1 if $^V lt v5.8.3;
+     ok scalar %hash;
+  }
   %hash = ();
   ok !%hash;
 
